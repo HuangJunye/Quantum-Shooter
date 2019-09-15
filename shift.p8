@@ -19,6 +19,7 @@ function _init()
  }
  bullets = {}
  enemies = {}
+ explosions = {}
  -- genereate enemies
  for i=1,4 do
  	add(enemies, {
@@ -76,6 +77,10 @@ function coll(a,e)
  return true
 end
 
+function explode(x,y)
+ add(explosions,{x=x,y=y,t=0})
+end
+
 function fire()
  local b = {
   sp=3,
@@ -98,6 +103,15 @@ function update_game()
    ship.t = 0
   end
  end
+ 
+ -- explosions
+ for ex in all(explosions) do
+  ex.t+=1
+  if ex.t==13 then
+   del(explosions, ex)
+  end
+ end
+ 
  -- move enemies
  for e in all(enemies) do
   e.x = e.r*sin(t/40) + e.m_x
@@ -125,6 +139,7 @@ function update_game()
    if coll(b,e) then
     del(enemies,e)
     ship.p += 1
+    explode(e.x,e.y)
    end
   end
  end
@@ -162,6 +177,12 @@ function draw_game()
   -- draw ship
   spr(ship.sp,ship.x,ship.y)
  end
+ 
+ -- draw explosions
+ for ex in all(explosions) do
+  circ(ex.x,ex.y,ex.t/3,8+ex.t%3)
+ end
+ 
  -- draw bullets
  for b in all(bullets) do
   spr(b.sp,b.x,b.y)
