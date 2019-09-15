@@ -42,6 +42,7 @@ function _init()
   w=1,
   h=4,
   score=0,
+  double=0,
   t=0,
   energy = 60,
   hit = 0,
@@ -126,8 +127,8 @@ function update_enemy(e)
  -- collision with ship
  if coll(ship,e) and not ship.inv then
    ship.inv = true
-   ship.h -= 1
-   if ship.h <= 0 then
+   ship.energy -= 10
+   if ship.energy <= 0 then
     game_over()
    end
   end
@@ -163,7 +164,7 @@ function spawn_enemy_wave_by_progress()
  if randlimit > 35 then randlimit = 35 end
  local r = flr(rnd(randlimit))
 
- r = 3
+ --r = 3
  if r > 5 then
    -- add stronger enemy
  else
@@ -305,7 +306,8 @@ function fire()
   dy=-3,
   box={x1=2,y1=0,x2=4,y2=2}
  }
- if ship.polarity then
+ b.polarity = ship.polarity
+ if b.polarity then
   b.sp = 2
  else
   b.sp = 2+16
@@ -416,7 +418,7 @@ function update_game()
 
   -- hit enemy and score
   for e in all(enemies) do
-   if coll(b,e) then
+   if coll(b,e) and (e.polarity ~= b.polarity) then
     del(enemies,e)
     ship.score += 1
     explode(e.x,e.y)
@@ -465,20 +467,93 @@ function _draw ()
  end
 end
 
+function compile_score(score,double)
+  local zeroes = ""
+  score = "" .. score
+  for x = 1, (8-#score) do
+     zeroes = zeroes .. "0"
+  end
+  score = zeroes .. score
+  local output = ""
+  if double > 0 then
+    local int = "00032000"
+    local buffer = 0
+    for n = 8,1,-1 do
+      local s = 0 .. sub(score,n,n)
+      local i = 0 .. sub(int,n,n)
+      local o = s+(i*double)+buffer
+      if o > 19 then o = 9 buffer = 2
+      elseif o > 9 then o = 9 buffer = 1
+      else buffer = 0 end
+      output = o .. output
+    end
+  else
+    for n = 1,8 do
+      o = sub(score,n,n) or 0
+      output = output .. o
+    end
+  end
+  for n = 1,8 do
+    if sub(output,1,1) == "0" then
+      output = sub(output,2)
+    end
+  end
+    return output
+end
+
+function draw_ui()
+  local energy = flr(ship.energy)
+  if polarity == true then
+    pal(0,7)
+    pal(7,0)
+  end
+  if polarity == true and btn(4) and every(4,0,2) then
+    pal(0,0)
+    pal(7,7)
+  end
+  if energy >= 100 then energy = "max" end
+  print(energy,1,121,0)
+  print(energy,1,120,7)
+  local length = 0
+  if ship.combo > 9 then length = 4 end
+  print("x" .. ship.combo,120-length,121,0)
+  print("x" .. ship.combo,120-length,120,7)
+  local energybar = 117
+  local ragemode = 7
+  if ship.energy < 20 and every(4,0,2) then
+    ragemode = 9
+  end
+  rectfill(2,energybar+1-ship.energy,6,energybar+1,0)
+  rectfill(1,energybar-ship.energy,5,energybar,ragemode)
+
+  if ship.highscore and every (120,0,60) then
+    print(ship.double, 80,120,9)
+  end
+
+  --
+  ship.score = flr(ship.score)
+  local length = compile_score(ship.score,ship.double)
+  for n = 1,#length do
+
+    local nr = sub(compile_score(ship.score,ship.double), n,n) or 0
+    nr = "0" .. nr
+    if polarity == false then
+      pal(0,7)
+      pal(7,0)
+    elseif polarity == true then
+      pal(0,0)
+      pal(7,7)
+    end
+    spr(134+nr,119,(n-1)*16,1,2)
+  end
+
+
+end
 
 function draw_game()
  cls()
  -- display point
  print(ship.score,0,0)
-
- -- draw health
- for i=1,ship.h_max do
-  if i<=ship.h then
-   spr(14,98+6*i,0)
-  else
-   spr(15,98+6*i,0)
-  end
- end
 
  -- draw stars
  for st in all(stars) do
@@ -515,6 +590,7 @@ function draw_game()
  end
 
  draw_e_projectiles()
+ draw_ui()
 end
 __gfx__
 000900000009000000c0c00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000808000006060000
