@@ -17,6 +17,11 @@ function _update()
  else
   ship.sp=2
  end
+ 
+ if btn(0) then ship.x-=2 end
+ if btn(1) then ship.x+=2 end
+ if btn(2) then ship.y-=2 end
+ if btn(3) then ship.y+=2 end
 end
 
 
