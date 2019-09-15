@@ -104,6 +104,18 @@ function update_enemy(e)
   elseif e.x < 15 then e.polarity = false end
   e.y += 0.35
  end
+
+ gun_x = e.x + e.w * 4 + e.gunoffset.x
+ gun_y = e.y + e.h * 8 + e.gunoffset.y
+
+ if e.shotpattern == 0 then
+    -- simple shots going downwards
+    if every(50) then
+       add_e_projectile(gun_x, gun_y, e.polarity, 0, rnd(0.3) + 0.8)
+    end
+ end
+
+ -- collision with ship
  if coll(ship,e) and not ship.inv then
    ship.inv = true
    ship.h -= 1
@@ -151,6 +163,65 @@ function spawn_enemy_wave_by_progress()
    create_enemy_simple(x, -8)
   end
  end
+end
+
+function lerp(a,b,t)
+  return a + t*(b-a)
+end
+
+function every(duration,offset,period)
+  local offset = offset or 0
+  local period = period or 1
+  local offset_frames = frames + offset
+  return offset_frames % duration < period
+end
+
+function add_e_projectile(e_x,e_y, e_polarity, e_direction, e_velocity, e_size) --needs only an x,y
+  e_direction = e_direction or 0
+  e_velocity = e_velocity or 1
+  e_polarity = e_polarity or false
+  e_size = e_size or 1
+  local projectile = {x = e_x,y = e_y, direction = e_direction, velocity = e_velocity, polarity = e_polarity, size = e_size}
+  add(e_projectiles,projectile)
+  print("add_e_projectile")
+end
+
+function pythagoras(ax,ay,bx,by)
+  local x = ax-bx
+  local y = ay-by
+  return sqrt(x*x+y*y)
+end
+
+function update_e_projectiles()
+  for p in all(e_projectiles) do
+    if pythagoras(p.x,p.y,ship.x+3,ship.y+4) < 15 and p.polarity ~= polarity then
+      p.x = lerp(p.x,ship.x+3,0.2)
+      p.y = lerp(p.y,ship.y+6,0.2)
+    else
+      p.x = p.x+p.velocity*sin(p.direction)
+      p.y = p.y+p.velocity*cos(p.direction)
+    end
+  end
+  for p = #e_projectiles, 1, -1 do
+    local x = e_projectiles[p].x
+    local y = e_projectiles[p].y
+    if x > 120 or x < 8 or y > 128 or y < 0 then del(e_projectiles,e_projectiles[p]) end
+  end
+end
+
+function draw_e_projectiles()
+  for p in all(e_projectiles) do
+    if p.polarity == true then
+      circfill(p.x,p.y,p.size+1,7)
+      circfill(p.x,p.y,p.size,0)
+      if polarity == true and every(4,0,2)
+      then circfill(p.x,p.y,p.size,9) end
+    else
+      circfill(p.x,p.y,p.size+1,0)
+      circfill(p.x,p.y,p.size,7)
+      if polarity == false and every(4,0,2) then circfill(p.x,p.y,p.size,9) end
+    end
+  end
 end
 
 function start()
@@ -273,6 +344,8 @@ function update_game()
     update_enemy(e)
  end
 
+ update_e_projectiles()
+
  -- move bullets
  for b in all(bullets) do
   b.x+=b.dx
@@ -374,6 +447,8 @@ function draw_game()
  for e in all(enemies) do
   spr(e.sp,e.x,e.y)
  end
+
+ draw_e_projectiles()
 end
 __gfx__
 00000000000900000009000000707000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
