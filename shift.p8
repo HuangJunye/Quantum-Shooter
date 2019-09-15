@@ -6,6 +6,7 @@ __lua__
 
 function _init()
  t=0
+ cartdata(0)
  ship = {
   sp=1,
   x=60,
@@ -21,7 +22,7 @@ function _init()
  enemies = {}
  explosions = {}
  stars = {}
- 
+ shake_str = {x=0,y=0}
  -- generate stars in the bg
  for i=1,128 do
   add(stars,{
@@ -35,6 +36,14 @@ function _init()
  
  start()
 end
+
+function shake()
+ -- shake camera
+ shake_str.x=2-rnd(4)
+ shake_str.y=2-rnd(4)
+ camera(shake_str.x,shake_str.y)
+end
+
 
 function respawn()
  local n = flr(rnd(9))+2
@@ -55,13 +64,33 @@ function respawn()
 end
 
 function start()
- _update = update_game
- _draw = draw_game
+ _update = update_menu
+ _draw = draw_menu
+end
+
+function update_menu()
+ if btn(4) then
+  _update=update_game
+  _draw=draw_game
+ end
+end
+
+function draw_menu()
+ cls()
+ print("ikaruga",30,50) -- title
+ print("press 🅾️ to start",30,80)
+ -- print high score from data
+ print("high-score",40,100)
+ print(dget(0),85,100)
 end
 
 function game_over()
  _update = update_over
  _draw = draw_over
+ -- update high score
+ if(dget(0)<ship.p) then
+  dset(0,ship.p)
+ end
 end
 
 function update_over()
@@ -116,7 +145,9 @@ function update_game()
  -- invincibility
  if ship.inv then
   ship.t += 1
+  shake()
   if ship.t > 30 then
+   camera(0,0)
    ship.inv = false
    ship.t = 0
   end
@@ -189,11 +220,25 @@ function update_game()
   ship.sp=2
  end
  
- if btn(0) then ship.x-=2 end
- if btn(1) then ship.x+=2 end
- if btn(2) then ship.y-=2 end
- if btn(3) then ship.y+=2 end
+ -- button control
+ if btn(0) and ship.x>0 then
+  ship.x-=2 
+ end
+ 
+ if btn(1) and ship.x<120 then
+  ship.x+=2 
+ end
+ 
+ if btn(2) and ship.y>0 then
+  ship.y-=2
+ end
+ 
+ if btn(3) and ship.y<120 then
+  ship.y+=2
+ end
+ 
  if btnp(4) then fire() end
+ 
 end
 
 
