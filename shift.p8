@@ -12,8 +12,11 @@ function _init()
  for i=1,10 do
  	add(enemies, {
  		sp=33,
- 		x=i*16,
- 		y=60-i*8
+ 	 m_x=i*16,
+ 		m_y=60-i*8,
+ 		x=-32,
+ 		y=-32,
+ 		r=10
  		})
  end
 end
@@ -31,7 +34,12 @@ end
 
 function _update()
  t=t+1
- 
+ -- move enemies
+ for e in all(enemies) do
+  e.x = e.r*sin(t/40) + e.m_x
+  e.y = e.r*cos(t/40) + e.m_y
+ end
+ -- move bullets
  for b in all(bullets) do
   b.x+=b.dx
   b.y+=b.dy
