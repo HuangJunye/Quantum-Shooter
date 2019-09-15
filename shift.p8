@@ -6,6 +6,7 @@ __lua__
 
 function _init()
  t=0
+ cartdata(0)
  ship = {
   sp=1,
   x=60,
@@ -67,11 +68,6 @@ function start()
  _draw = draw_menu
 end
 
-function game_over()
- _update = update_over
- _draw = draw_over
-end
-
 function update_menu()
  if btn(4) then
   _update=update_game
@@ -83,6 +79,18 @@ function draw_menu()
  cls()
  print("ikaruga",30,50) -- title
  print("press 🅾️ to start",30,80)
+ -- print high score from data
+ print("high-score",40,100)
+ print(dget(0),85,100)
+end
+
+function game_over()
+ _update = update_over
+ _draw = draw_over
+ -- update high score
+ if(dget(0)<ship.p) then
+  dset(0,ship.p)
+ end
 end
 
 function update_over()
