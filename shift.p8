@@ -27,6 +27,11 @@ function _update()
  for b in all(bullets) do
   b.x+=b.dx
   b.y+=b.dy
+  -- remove bullets out of screen
+  if b.x < 0 or b.x > 128 or 
+   b.y < 0 or b.y > 128 then
+   del(bullets,b)
+  end
  end
  
  if(t%8<4) then
@@ -45,6 +50,7 @@ end
 
 function _draw()
  cls()
+ print(#bullets)
  -- draw ship
  spr(ship.sp,ship.x,ship.y)
  -- draw bullets
