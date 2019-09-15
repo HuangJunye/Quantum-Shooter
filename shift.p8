@@ -31,7 +31,7 @@ end
 function _init()
  t=0
  cartdata(0)
- scene = "game"
+ scene = "title"
  frames = 0
 
  ship = {
@@ -129,7 +129,7 @@ function update_enemy(e)
    ship.inv = true
    ship.energy -= 10
    if ship.energy <= 0 then
-    game_over()
+    scene = "game_over"
    end
   end
 end
@@ -240,8 +240,7 @@ end
 
 function update_menu()
  if btn(4) then
-  _update=update_game
-  _draw=draw_game
+  scene = "game"
  end
 end
 
@@ -456,8 +455,13 @@ end
 function _update60 ()
  timers_tick()
  frames += 1
- if scene == "game" then
+ if scene == "title" then
+   update_menu()
+   draw_menu()
+ elseif scene == "game" then
    update_game()
+ elseif scene == "game_over" then
+   game_over()
  end
 end
 
@@ -503,14 +507,6 @@ end
 
 function draw_ui()
   local energy = flr(ship.energy)
-  if polarity == true then
-    pal(0,7)
-    pal(7,0)
-  end
-  if polarity == true and btn(4) and every(4,0,2) then
-    pal(0,0)
-    pal(7,7)
-  end
   if energy >= 100 then energy = "max" end
   print(energy,1,121,0)
   print(energy,1,120,7)
@@ -523,8 +519,9 @@ function draw_ui()
   if ship.energy < 20 and every(4,0,2) then
     ragemode = 9
   end
-  rectfill(2,energybar+1-ship.energy,6,energybar+1,0)
-  rectfill(1,energybar-ship.energy,5,energybar,ragemode)
+  if ship.polarity then color = 12 else color = 8 end
+  rectfill(2,energybar+1-ship.energy,6,energybar+1,ragemode)
+  rectfill(1,energybar-ship.energy,5,energybar,color)
 
   if ship.highscore and every (120,0,60) then
     print(ship.double, 80,120,9)
@@ -534,20 +531,10 @@ function draw_ui()
   ship.score = flr(ship.score)
   local length = compile_score(ship.score,ship.double)
   for n = 1,#length do
-
     local nr = sub(compile_score(ship.score,ship.double), n,n) or 0
     nr = "0" .. nr
-    if polarity == false then
-      pal(0,7)
-      pal(7,0)
-    elseif polarity == true then
-      pal(0,0)
-      pal(7,7)
-    end
     spr(134+nr,119,(n-1)*16,1,2)
   end
-
-
 end
 
 function draw_game()
