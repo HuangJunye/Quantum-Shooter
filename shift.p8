@@ -12,7 +12,8 @@ function _init()
   y=100,
   h_max=4,
   h=3,
-  p=0
+  p=0,
+  box={x1=0,y1=0,x2=6,y2=6}
  }
  bullets = {}
  enemies = {}
@@ -24,13 +25,33 @@ function _init()
  		m_y=60-i*8,
  		x=-32,
  		y=-32,
- 		r=10
+ 		r=10,
+ 		box={x1=0,y1=0,x2=7,y2=7}
  		})
  end
 end
 
+function abs_box(s)
+ local box = {}
+ box.x1 = s.box.x1 + s.x
+ box.y1 = s.box.y1 + s.y
+ box.x2 = s.box.x2 + s.x
+ box.y2 = s.box.y2 + s.y
+ return box
+end
+
 function coll(a,e)
- -- todo
+ local box_a = abs_box(a)
+ local box_e = abs_box(e)
+ 
+ if box_a.x1 > box_e.x2 or
+    box_a.y1 > box_e.y2 or
+    box_a.x2 < box_e.x1 or
+    box_a.y2 < box_e.y1 then
+  return false
+ end
+ 
+ return true
 end
 
 function fire()
@@ -39,7 +60,8 @@ function fire()
   x=ship.x,
   y=ship.y,
   dx=0,
-  dy=-3
+  dy=-3,
+  box={x1=2,y1=0,x2=4,y2=2}
  }
  add(bullets,b)
 end
@@ -63,12 +85,13 @@ function _update()
    b.y < 0 or b.y > 128 then
    del(bullets,b)
   end
- end
- -- hit enemy and score
- for e in all(enemies) do
-  if coll(b,e) then
-   dle(enemies,e)
+
+  -- hit enemy and score
+  for e in all(enemies) do
+   if coll(b,e) then
+    del(enemies,e)
     ship.p += 1
+   end
   end
  end
  
