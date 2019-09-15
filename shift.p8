@@ -32,19 +32,26 @@ function _init()
  end
  
  -- genereate enemies
- for i=1,4 do
+ 
+ start()
+end
+
+function respawn()
+ local n = flr(rnd(9))+2
+ for i=1,n do
+  local d = -1
+  if rnd(1)<0.5 then d=1 end
  	add(enemies, {
  		sp=33,
  	 m_x=i*16,
- 		m_y=60-i*8,
+ 		m_y=-20-i*8,
+ 		d=d,
  		x=-32,
  		y=-32,
  		r=10,
  		box={x1=0,y1=0,x2=7,y2=7}
  		})
  end
- 
- start()
 end
 
 function start()
@@ -132,9 +139,15 @@ function update_game()
   end
  end
  
+ -- respawn enemies
+ if #enemies <= 0 then
+  respawn()
+ end
+ 
  -- move enemies
  for e in all(enemies) do
-  e.x = e.r*sin(t/40) + e.m_x
+  e.m_y += 1.3
+  e.x = e.r*sin(e.d*t/40) + e.m_x
   e.y = e.r*cos(t/40) + e.m_y
   if coll(ship,e) and not ship.inv then
    ship.inv = true
@@ -143,6 +156,12 @@ function update_game()
     game_over()
    end
   end
+  
+  -- remove enemies out of screen
+  if e.y > 150 then
+   del(enemies,e)
+  end
+  
  end
  -- move bullets
  for b in all(bullets) do
