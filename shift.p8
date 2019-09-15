@@ -29,6 +29,26 @@ function _init()
  		box={x1=0,y1=0,x2=7,y2=7}
  		})
  end
+ 
+ start()
+end
+
+function start()
+ _update = update_game
+ _draw = draw_game
+end
+
+function game_over()
+ _update = update_over
+ _draw = draw_over
+end
+
+function update_over()
+end
+
+function game_over()
+ cls()
+ print("game over",50,50,4)
 end
 
 function abs_box(s)
@@ -66,7 +86,7 @@ function fire()
  add(bullets,b)
 end
 
-function _update()
+function update_game()
  t=t+1
  -- move enemies
  for e in all(enemies) do
@@ -109,7 +129,7 @@ function _update()
 end
 
 
-function _draw()
+function draw_game()
  cls()
  -- display point
  print(ship.p,0,0)  
