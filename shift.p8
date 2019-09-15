@@ -20,6 +20,17 @@ function _init()
  bullets = {}
  enemies = {}
  explosions = {}
+ stars = {}
+ 
+ -- generate stars in the bg
+ for i=1,128 do
+  add(stars,{
+   x=rnd(128),
+   y=rnd(128),
+   s=rnd(2)+1
+  })
+ end
+ 
  -- genereate enemies
  for i=1,4 do
  	add(enemies, {
@@ -104,6 +115,15 @@ function update_game()
   end
  end
  
+ -- update stars
+ for st in all(stars) do
+  st.y += st.s
+  if st.y >= 128 then
+   st.y = 0
+   st.x = rnd(128)
+  end
+ end
+ 
  -- explosions
  for ex in all(explosions) do
   ex.t+=1
@@ -170,6 +190,11 @@ function draw_game()
   else
    spr(50,98+6*i,0)
   end
+ end
+ 
+ -- draw stars
+ for st in all(stars) do 
+  pset(st.x,st.y,6)
  end
  
  -- invincibility
