@@ -39,10 +39,17 @@ function _init()
   x=60,
   y=100,
   h_max=4,
+  w=1,
   h=4,
-  p=0,
+  score=0,
   t=0,
+  energy = 60,
+  hit = 0,
+  projectiles = {},
+  highscore = false,
+  combo = 1,
   inv=false, -- invincibility
+  polarity=false,
   box={x1=0,y1=0,x2=6,y2=6}
  }
  bullets = {}
@@ -194,7 +201,7 @@ end
 
 function update_e_projectiles()
   for p in all(e_projectiles) do
-    if pythagoras(p.x,p.y,ship.x+3,ship.y+4) < 15 and p.polarity ~= polarity then
+    if pythagoras(p.x,p.y,ship.x+3,ship.y+4) < 15 and p.polarity ~= ship.polarity then
       p.x = lerp(p.x,ship.x+3,0.2)
       p.y = lerp(p.y,ship.y+6,0.2)
     else
@@ -214,12 +221,12 @@ function draw_e_projectiles()
     if p.polarity == true then
       circfill(p.x,p.y,p.size+1,7)
       circfill(p.x,p.y,p.size,0)
-      if polarity == true and every(4,0,2)
+      if ship.polarity == true and every(4,0,2)
       then circfill(p.x,p.y,p.size,9) end
     else
       circfill(p.x,p.y,p.size+1,0)
       circfill(p.x,p.y,p.size,7)
-      if polarity == false and every(4,0,2) then circfill(p.x,p.y,p.size,9) end
+      if ship.polarity == false and every(4,0,2) then circfill(p.x,p.y,p.size,9) end
     end
   end
 end
@@ -249,8 +256,8 @@ function game_over()
  _update = update_over
  _draw = draw_over
  -- update high score
- if(dget(0)<ship.p) then
-  dset(0,ship.p)
+ if(dget(0)<ship.score) then
+  dset(0,ship.score)
  end
 end
 
@@ -301,8 +308,53 @@ function fire()
  add(bullets,b)
 end
 
+function inside(point, enemy)
+  if point == nil then return false end
+   local px = point.x
+   local py = point.y
+   return
+      px > enemy.x and px < enemy.x + enemy.w * 8 and
+      py > enemy.y and py < enemy.y + enemy.h * 8
+end
+
+function collisions()
+   --laser collison
+   local shiplaserdmg = 1
+   if ship.energy <= 20 then
+      shiplaserdmg = 2
+   end
+   for p = #ship.projectiles, 1, -1 do
+      for e in all(enemies) do
+         if inside(ship.projectiles[p], e) then
+            e.hp -= shiplaserdmg
+            e.hit = true
+            if (every(4)) ship.score += 1  sfx(12,3)
+            del(ship.projectiles,ship.projectiles[p])
+         end
+      end
+   end
+  -- enemy projectile collisions
+  for p = #e_projectiles, 1, -1 do
+      if inside(e_projectiles[p], ship) then
+        if e_projectiles[p].polarity == polarity then
+         -- if enemy projectiles is the same as ship
+         ship.energy += 3
+         ship.score += ship.combo
+         ship.combo += 1
+        elseif e_projectiles[p].polarity ~= polarity then
+         -- if enemy projectiles is not the same as ship
+         ship.inv = true
+         ship.energy -= 12
+         ship.hit += 2
+         ship.combo = 1
+         sfx(13,3)
+        end
+        del(e_projectiles,e_projectiles[p])
+      end
+  end
+end
+
 function update_game()
- print("update game",80,80)
  t=t+1
  -- invincibility
  if ship.inv then
@@ -345,6 +397,7 @@ function update_game()
  end
 
  update_e_projectiles()
+ collisions()  -- projectile collisions
 
  -- move bullets
  for b in all(bullets) do
@@ -357,13 +410,13 @@ function update_game()
   end
 
   -- hit enemy and score
-  for e in all(enemies) do
-   if coll(b,e) then
-    del(enemies,e)
-    ship.p += 1
-    explode(e.x,e.y)
-   end
-  end
+  -- for e in all(enemies) do
+  -- if coll(b,e) then
+  --  del(enemies,e)
+  --  ship.score += 1
+  --  explode(e.x,e.y)
+  -- end
+  -- end
  end
 
  if(t%8<4) then
@@ -412,7 +465,7 @@ end
 function draw_game()
  cls()
  -- display point
- print(ship.p,0,0)
+ print(ship.score,0,0)
 
  -- draw health
  for i=1,ship.h_max do
