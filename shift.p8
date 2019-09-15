@@ -11,8 +11,10 @@ function _init()
   x=60,
   y=100,
   h_max=4,
-  h=3,
+  h=4,
   p=0,
+  t=0,
+  inv=false, -- invincibility
   box={x1=0,y1=0,x2=6,y2=6}
  }
  bullets = {}
@@ -46,7 +48,7 @@ end
 function update_over()
 end
 
-function game_over()
+function draw_over()
  cls()
  print("game over",50,50,4)
 end
@@ -88,12 +90,24 @@ end
 
 function update_game()
  t=t+1
+ -- invincibility
+ if ship.inv then
+  ship.t += 1
+  if ship.t > 30 then
+   ship.inv = false
+   ship.t = 0
+  end
+ end
  -- move enemies
  for e in all(enemies) do
   e.x = e.r*sin(t/40) + e.m_x
   e.y = e.r*cos(t/40) + e.m_y
-  if coll(ship,e) then
-   --todo
+  if coll(ship,e) and not ship.inv then
+   ship.inv = true
+   ship.h -= 1
+   if ship.h <= 0 then
+    game_over()
+   end
   end
  end
  -- move bullets
@@ -133,6 +147,7 @@ function draw_game()
  cls()
  -- display point
  print(ship.p,0,0)  
+  
  -- draw health
  for i=1,ship.h_max do
   if i<=ship.h then
@@ -142,8 +157,11 @@ function draw_game()
   end
  end
  
- -- draw ship
- spr(ship.sp,ship.x,ship.y)
+ -- invincibility
+ if not ship.inv or t%8<4 then
+  -- draw ship
+  spr(ship.sp,ship.x,ship.y)
+ end
  -- draw bullets
  for b in all(bullets) do
   spr(b.sp,b.x,b.y)
