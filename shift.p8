@@ -4,18 +4,20 @@ __lua__
 -- shift
 --by kirais
 
-t=0
 function _init()
+ t=0
  ship = {
   sp=1,
   x=60,
-  y=60,
+  y=100,
   h_max=4,
-  h=3
+  h=3,
+  p=0
  }
  bullets = {}
  enemies = {}
- for i=1,10 do
+ -- genereate enemies
+ for i=1,4 do
  	add(enemies, {
  		sp=33,
  	 m_x=i*16,
@@ -25,6 +27,10 @@ function _init()
  		r=10
  		})
  end
+end
+
+function coll(a,e)
+ -- todo
 end
 
 function fire()
@@ -44,6 +50,9 @@ function _update()
  for e in all(enemies) do
   e.x = e.r*sin(t/40) + e.m_x
   e.y = e.r*cos(t/40) + e.m_y
+  if coll(ship,e) then
+   --todo
+  end
  end
  -- move bullets
  for b in all(bullets) do
@@ -53,6 +62,13 @@ function _update()
   if b.x < 0 or b.x > 128 or 
    b.y < 0 or b.y > 128 then
    del(bullets,b)
+  end
+ end
+ -- hit enemy and score
+ for e in all(enemies) do
+  if coll(b,e) then
+   dle(enemies,e)
+    ship.p += 1
   end
  end
  
@@ -72,6 +88,17 @@ end
 
 function _draw()
  cls()
+ -- display point
+ print(ship.p,0,0)  
+ -- draw health
+ for i=1,ship.h_max do
+  if i<=ship.h then
+   spr(49,98+6*i,0)
+  else
+   spr(50,98+6*i,0)
+  end
+ end
+ 
  -- draw ship
  spr(ship.sp,ship.x,ship.y)
  -- draw bullets
@@ -81,14 +108,6 @@ function _draw()
  -- draw enemies
  for e in all(enemies) do
   spr(e.sp,e.x,e.y)
- end
- 
- for i=1,ship.h_max do
-  if i<=ship.h then
-   spr(49,0+6*i,3)
-  else
-   spr(50,0+6*i,3)
-  end
  end
 end
 __gfx__
