@@ -63,13 +63,26 @@ function respawn()
 end
 
 function start()
- _update = update_game
- _draw = draw_game
+ _update = update_menu
+ _draw = draw_menu
 end
 
 function game_over()
  _update = update_over
  _draw = draw_over
+end
+
+function update_menu()
+ if btn(4) then
+  _update=update_game
+  _draw=draw_game
+ end
+end
+
+function draw_menu()
+ cls()
+ print("ikaruga",30,50) -- title
+ print("press 🅾️ to start",30,80)
 end
 
 function update_over()
