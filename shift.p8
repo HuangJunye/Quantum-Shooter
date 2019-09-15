@@ -4,9 +4,36 @@ __lua__
 -- shift
 --by kirais
 
+timers = {}
+
+function timer_start(id, time)
+   timers[id] = { t = time }
+end
+
+function timer_check(id)
+   return timers[id].t <= 0
+end
+
+function timers_tick()
+   for timer in all(timers) do
+      if timer.t > 0 then
+         timer.t -= 0.01666666
+      else
+         timer.t = 0
+      end
+   end
+end
+
+function timers_clear()
+   timers = {}
+end
+
 function _init()
  t=0
  cartdata(0)
+ scene = "game"
+ frames = 0
+
  ship = {
   sp=1,
   x=60,
@@ -23,6 +50,8 @@ function _init()
  explosions = {}
  stars = {}
  shake_str = {x=0,y=0}
+ progress=0
+
  -- generate stars in the bg
  for i=1,128 do
   add(stars,{
@@ -31,10 +60,8 @@ function _init()
    s=rnd(2)+1
   })
  end
- 
- -- genereate enemies
- 
- start()
+
+ -- start()
 end
 
 function shake()
@@ -44,22 +71,85 @@ function shake()
  camera(shake_str.x,shake_str.y)
 end
 
+function enemy_base(x, y)
+  local enemy = {}
+  add(enemies, enemy)
+  enemy.x = x
+  enemy.y = y
+  enemy.w = 1
+  enemy.h = 1
+  enemy.polarity = false
+  enemy.movement = 0
+  enemy.shotpattern = 0
+  enemy.score = 1
+  enemy.gunoffset = { x = 0, y = 0 }
+  enemy.box={x1=0,y1=0,x2=6,y2=6}
+  return enemy
+end
 
-function respawn()
- local n = flr(rnd(9))+2
- for i=1,n do
-  local d = -1
-  if rnd(1)<0.5 then d=1 end
- 	add(enemies, {
- 		sp=33,
- 	 m_x=i*16,
- 		m_y=-20-i*8,
- 		d=d,
- 		x=-32,
- 		y=-32,
- 		r=10,
- 		box={x1=0,y1=0,x2=7,y2=7}
- 		})
+function create_enemy_simple(x, y)
+   local enemy = enemy_base(x, y)
+   enemy.hp = 25
+   enemy.sprite = 32
+   enemy.speed = 0.5 + (progress * 0.02)
+   return enemy
+end
+
+function update_enemy(e)
+ if e.movement == 0 then
+  -- move back and forth across the whole screen
+  if e.polarity == false then e.x += e.speed
+  elseif e.polarity == true then e.x -= e.speed end
+  if e.x > 100 then e.polarity = true
+  elseif e.x < 15 then e.polarity = false end
+  e.y += 0.35
+ end
+ if coll(ship,e) and not ship.inv then
+   ship.inv = true
+   ship.h -= 1
+   if ship.h <= 0 then
+    game_over()
+   end
+  end
+end
+
+enemies = {}
+e_projectiles = {}
+progress = 0
+
+x_patterns = {
+   { 32, 48, 64 },
+   { 48, 64, 80 },
+   { 32, 64, 96 },
+}
+
+function get_x_coord_pattern()
+   return x_patterns[flr(rnd(#x_patterns)) + 1]
+end
+
+function get_x_coord_column()
+   return (flr(rnd(12)) + 2) * 8
+end
+
+function spawn_enemy_wave_by_progress()
+ -- limit number of enemies to less than 16
+ if #enemies > 16 then
+  return
+ end
+
+ progress += 1
+
+ local randlimit = progress
+ if randlimit > 35 then randlimit = 35 end
+ local r = flr(rnd(randlimit))
+
+ r = 3
+ if r > 5 then
+   -- add stronger enemy
+ else
+  for x in all(get_x_coord_pattern()) do
+   create_enemy_simple(x, -8)
+  end
  end
 end
 
@@ -113,14 +203,14 @@ end
 function coll(a,e)
  local box_a = abs_box(a)
  local box_e = abs_box(e)
- 
+
  if box_a.x1 > box_e.x2 or
     box_a.y1 > box_e.y2 or
     box_a.x2 < box_e.x1 or
     box_a.y2 < box_e.y1 then
   return false
  end
- 
+
  return true
 end
 
@@ -141,6 +231,7 @@ function fire()
 end
 
 function update_game()
+ print("update game",80,80)
  t=t+1
  -- invincibility
  if ship.inv then
@@ -152,7 +243,7 @@ function update_game()
    ship.t = 0
   end
  end
- 
+
  -- update stars
  for st in all(stars) do
   st.y += st.s
@@ -161,7 +252,7 @@ function update_game()
    st.x = rnd(128)
   end
  end
- 
+
  -- explosions
  for ex in all(explosions) do
   ex.t+=1
@@ -169,37 +260,25 @@ function update_game()
    del(explosions, ex)
   end
  end
- 
- -- respawn enemies
- if #enemies <= 0 then
-  respawn()
+
+ -- enemies
+ local rate = 120 - (progress * 0.5)
+ if rate < 60 then rate = 60 end
+
+ if frames % rate == 0 then
+    spawn_enemy_wave_by_progress()
  end
- 
- -- move enemies
+
  for e in all(enemies) do
-  e.m_y += 1.3
-  e.x = e.r*sin(e.d*t/40) + e.m_x
-  e.y = e.r*cos(t/40) + e.m_y
-  if coll(ship,e) and not ship.inv then
-   ship.inv = true
-   ship.h -= 1
-   if ship.h <= 0 then
-    game_over()
-   end
-  end
-  
-  -- remove enemies out of screen
-  if e.y > 150 then
-   del(enemies,e)
-  end
-  
+    update_enemy(e)
  end
+
  -- move bullets
  for b in all(bullets) do
   b.x+=b.dx
   b.y+=b.dy
   -- remove bullets out of screen
-  if b.x < 0 or b.x > 128 or 
+  if b.x < 0 or b.x > 128 or
    b.y < 0 or b.y > 128 then
    del(bullets,b)
   end
@@ -213,40 +292,55 @@ function update_game()
    end
   end
  end
- 
+
  if(t%8<4) then
   ship.sp=1
  else
   ship.sp=2
  end
- 
+
  -- button control
  if btn(0) and ship.x>0 then
-  ship.x-=2 
+  ship.x-=2
  end
- 
+
  if btn(1) and ship.x<120 then
-  ship.x+=2 
+  ship.x+=2
  end
- 
+
  if btn(2) and ship.y>0 then
   ship.y-=2
  end
- 
+
  if btn(3) and ship.y<120 then
   ship.y+=2
  end
- 
+
  if btnp(4) then fire() end
- 
+
+end
+
+function _update60 ()
+ print("update60",50,50)
+ timers_tick()
+ frames += 1
+ if scene == "game" then
+   update_game()
+ end
+end
+
+function _draw ()
+ if scene == "game" then
+  draw_game()
+ end
 end
 
 
 function draw_game()
  cls()
  -- display point
- print(ship.p,0,0)  
-  
+ print(ship.p,0,0)
+
  -- draw health
  for i=1,ship.h_max do
   if i<=ship.h then
@@ -255,23 +349,23 @@ function draw_game()
    spr(50,98+6*i,0)
   end
  end
- 
+
  -- draw stars
- for st in all(stars) do 
+ for st in all(stars) do
   pset(st.x,st.y,6)
  end
- 
+
  -- invincibility
  if not ship.inv or t%8<4 then
   -- draw ship
   spr(ship.sp,ship.x,ship.y)
  end
- 
+
  -- draw explosions
  for ex in all(explosions) do
   circ(ex.x,ex.y,ex.t/3,8+ex.t%3)
  end
- 
+
  -- draw bullets
  for b in all(bullets) do
   spr(b.sp,b.x,b.y)
