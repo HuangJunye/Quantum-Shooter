@@ -189,11 +189,25 @@ function update_game()
   ship.sp=2
  end
  
- if btn(0) then ship.x-=2 end
- if btn(1) then ship.x+=2 end
- if btn(2) then ship.y-=2 end
- if btn(3) then ship.y+=2 end
+ -- button control
+ if btn(0) and ship.x>0 then
+  ship.x-=2 
+ end
+ 
+ if btn(1) and ship.x<120 then
+  ship.x+=2 
+ end
+ 
+ if btn(2) and ship.y>0 then
+  ship.y-=2
+ end
+ 
+ if btn(3) and ship.y<120 then
+  ship.y+=2
+ end
+ 
  if btnp(4) then fire() end
+ 
 end
 
 
