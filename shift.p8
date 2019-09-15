@@ -21,7 +21,7 @@ function _init()
  enemies = {}
  explosions = {}
  stars = {}
- 
+ shake_str = {x=0,y=0}
  -- generate stars in the bg
  for i=1,128 do
   add(stars,{
@@ -35,6 +35,14 @@ function _init()
  
  start()
 end
+
+function shake()
+ -- shake camera
+ shake_str.x=2-rnd(4)
+ shake_str.y=2-rnd(4)
+ camera(shake_str.x,shake_str.y)
+end
+
 
 function respawn()
  local n = flr(rnd(9))+2
@@ -116,7 +124,9 @@ function update_game()
  -- invincibility
  if ship.inv then
   ship.t += 1
+  shake()
   if ship.t > 30 then
+   camera(0,0)
    ship.inv = false
    ship.t = 0
   end
