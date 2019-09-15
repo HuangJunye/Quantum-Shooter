@@ -1,8 +1,8 @@
 pico-8 cartridge // http://www.pico-8.com
 version 18
 __lua__
--- shift
---by kirais
+-- quantum shooter
+-- by kirais
 
 timers = {}
 
@@ -128,8 +128,15 @@ function update_enemy(e)
  if coll(ship,e) and not ship.inv then
    ship.inv = true
    ship.energy -= 10
-   if ship.energy <= 0 then
-    scene = "game_over"
+   if ship.energy < 0 then
+     scene = "dead"
+     if ship.highscore == true then
+       dset(1,ship.score)
+       dset(2,ship.double)
+     end
+     frames = 0
+     timer_start(3,3.0)
+     sfx(6)
    end
   end
 end
@@ -233,20 +240,15 @@ function draw_e_projectiles()
   end
 end
 
-function start()
- _update = update_menu
- _draw = draw_menu
-end
-
-function update_menu()
+function update_tile()
  if btn(4) then
   scene = "game"
  end
 end
 
-function draw_menu()
+function draw_title()
  cls()
- print("ikaruga",30,50) -- title
+ print("quantum shooter",30,50) -- title
  print("press 🅾️ to start",30,80)
  -- print high score from data
  print("high-score",40,100)
@@ -254,11 +256,14 @@ function draw_menu()
 end
 
 function game_over()
- _update = update_over
- _draw = draw_over
+ update_over()
+ draw_over()
  -- update high score
  if(dget(0)<ship.score) then
   dset(0,ship.score)
+ end
+ if btn(4) then
+  scene = "title"
  end
 end
 
@@ -312,6 +317,40 @@ function fire()
   b.sp = 2+16
  end
  add(bullets,b)
+end
+
+function update_death()
+  if timer_check(3) and btn(4) then
+     scene = "title"
+     sfx(-1)
+     music(0)
+     _init()
+  end
+end
+
+function draw_death()
+  if timer_check(3) then
+    for x = 0,15 do
+      for y = 0,15 do
+        if every(rnd(6)) then spr(33+rnd(4),x*8,y*8,1,1,rnd(2),rnd(2)) end
+      end
+    end
+    local message = "your score"
+    if ship.highscore then
+      message = "new high score"
+      rectfill(25,89,8*10+25,95,0)
+
+
+      print("old score:" .. compile_score(oldscore[1],oldscore[2]), 26, 90, 7)
+    end
+    draw_highscore(compile_score(ship.score, ship.double),message)
+
+    rectfill(0,0,4,128,9)
+  	rectfill(127-4,0,128,128,9)
+  else
+    if every(2) then circfill(ship.x+3,ship.y+2,frames/4,7)
+    else circfill(ship.x+4,ship.y+3,frames/4,0) end
+  end
 end
 
 function inside(point, enemy)
@@ -456,17 +495,21 @@ function _update60 ()
  timers_tick()
  frames += 1
  if scene == "title" then
-   update_menu()
-   draw_menu()
+   update_tile()
  elseif scene == "game" then
    update_game()
- elseif scene == "game_over" then
-   game_over()
+ elseif scene == "dead" then
+   music(-1)
+   update_death()
  end
 end
 
 function _draw ()
- if scene == "game" then
+ if scene == "title" then
+  draw_title()
+ elseif scene == "dead" then
+  draw_death()
+ elseif scene == "game" then
   draw_game()
  end
 end
